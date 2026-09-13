@@ -376,9 +376,6 @@
 </div>
 </div>
 </div>
-<div id="blow-controls">
-<button id="hold-blow-btn" type="button">Hold to blow</button>
-</div>
 </div>
 </div>
 </div>
@@ -444,9 +441,9 @@
   // ---------- Candles: blow-out logic ----------
   var flames = [document.getElementById('flame1'), document.getElementById('flame2'), document.getElementById('flame3')];
   var cakeWrap = document.getElementById('cake-wrap');
+  var pageRight = document.getElementById('page-right');
   var wishOverlay = document.getElementById('wish-overlay');
   var relightBtn = document.getElementById('relight-btn');
-  var holdBlowBtn = document.getElementById('hold-blow-btn');
 
   var BLOW_THRESHOLD = 0.20;   // 0..1 level considered "blowing"; easier to trigger than the current setting
   var BLOW_MS_NEEDED = 500;    // sustained ms of blowing to extinguish; easier than the current setting
@@ -576,7 +573,7 @@
     micPollRafId = requestAnimationFrame(pollMic);
   }
 
-  // ---------- Hold-to-blow fallback (button + spacebar) ----------
+  // ---------- Hold-to-blow fallback on the cake page and spacebar ----------
   function startHold(){
     if(holding) return;
     holding = true;
@@ -587,11 +584,12 @@
     holding = false;
     if(!micActive) currentLevel = 0;
   }
-  holdBlowBtn.addEventListener('mousedown', startHold);
-  holdBlowBtn.addEventListener('touchstart', function(e){ e.preventDefault(); startHold(); }, {passive:false});
-  ['mouseup','mouseleave','touchend','touchcancel'].forEach(function(ev){
-    holdBlowBtn.addEventListener(ev, endHold);
-  });
+  pageRight.addEventListener('mousedown', startHold);
+  pageRight.addEventListener('touchstart', function(e){ e.preventDefault(); startHold(); }, {passive:false});
+  pageRight.addEventListener('mouseup', endHold);
+  pageRight.addEventListener('mouseleave', endHold);
+  pageRight.addEventListener('touchend', endHold, {passive:false});
+  pageRight.addEventListener('touchcancel', endHold, {passive:false});
   window.addEventListener('keydown', function(e){
     if(e.code === 'Space' && !e.repeat){
       e.preventDefault();
