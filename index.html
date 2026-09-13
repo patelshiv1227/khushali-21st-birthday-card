@@ -48,13 +48,17 @@
   #cover-wrap{
     width: var(--page-w);
     perspective: 1800px;
+    /* Place the closed cover on the right side of the stack so its hinge
+       sits over the shared center point, and the cover opens leftward
+       over the letter and cake pages. */
+    transform: translateX(calc(var(--page-w) * 0.5));
     transition: opacity .5s ease, transform .5s ease;
   }
   #cover-wrap.hidden{
     opacity:0;
     pointer-events:none;
     position:absolute;
-    transform: scale(.92);
+    transform: translateX(calc(var(--page-w) * 0.5)) scale(.92);
   }
   #cover{
     position:relative;
@@ -300,6 +304,10 @@
   @media (max-width: 700px){
     #stack{ --page-w: min(84vw, 420px); }
     #pages{ flex-direction:column; align-items:center; gap: 34px; }
+    /* On very narrow screens the spread stacks vertically, so the cover
+       should stay centered instead of being offset to the right. */
+    #cover-wrap{ transform: translateX(0); }
+    #cover-wrap.hidden{ transform: translateX(0) scale(.92); }
   }
 </style>
 </head>
