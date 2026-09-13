@@ -477,8 +477,8 @@
   var enableMicBtn = document.getElementById('enable-mic-btn');
   var holdBlowBtn = document.getElementById('hold-blow-btn');
 
-  var BLOW_THRESHOLD = 0.16;   // 0..1 level considered "blowing"
-  var BLOW_MS_NEEDED = 500;    // sustained ms of blowing to extinguish
+  var BLOW_THRESHOLD = 0.20;   // 0..1 level considered "blowing"; easier to trigger than the current setting
+  var BLOW_MS_NEEDED = 500;    // sustained ms of blowing to extinguish; easier than the current setting
   var HOLD_LEVEL = 0.5;        // simulated level while hold-button/spacebar pressed
 
   var currentLevel = 0;        // 0..1, updated by mic analyser or by hold controls
@@ -580,6 +580,12 @@
     var sum = 0;
     for(var i = 0; i < lowBins; i++){ sum += freqData[i]; }
     var avg = sum / lowBins / 255; // 0..1
+    var backgroundFloor = 0.05;
+    if(avg < backgroundFloor){
+      avg = 0;
+    } else {
+      avg = Math.max(0, avg - backgroundFloor);
+    }
     if(!holding){
       currentLevel = avg;
     }
