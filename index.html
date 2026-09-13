@@ -29,12 +29,14 @@
     display:flex;
     flex-direction:column;
     align-items:center;
+    justify-content:center;
     padding: 2.8vh 3vw 2.8vh;
   }
   #stack{
     display:grid;
     width:100%;
     max-width: 1700px;
+    --page-w: min(46vw, calc(66vh * 0.9229), 740px);
   }
   #stack > *{
     grid-area: 1 / 1;
@@ -44,7 +46,7 @@
 
   /* ---------- COVER ---------- */
   #cover-wrap{
-    width:min(92vw, calc(82vh * 0.9229));
+    width: var(--page-w);
     perspective: 1800px;
     transition: opacity .5s ease, transform .5s ease;
   }
@@ -120,7 +122,7 @@
 
   #pages{
     display:flex;
-    gap: 3.2%;
+    gap: 0;
     align-items:flex-start;
     justify-content:center;
     flex-wrap:wrap;
@@ -133,8 +135,8 @@
   }
   .page{
     position:relative;
-    height:min(66vh, 800px);
-    width:auto;
+    width: var(--page-w);
+    height:auto;
     aspect-ratio: 850/921;
     filter: drop-shadow(0 14px 24px rgba(0,0,0,.30));
   }
@@ -296,8 +298,8 @@
 
   /* ---- Responsive: stack pages on narrow screens ---- */
   @media (max-width: 700px){
+    #stack{ --page-w: min(84vw, 420px); }
     #pages{ flex-direction:column; align-items:center; gap: 34px; }
-    .page{ height:auto; width:min(84vw, 420px); }
   }
 </style>
 </head>
@@ -313,7 +315,7 @@
     <p id="cover-hint">tap to open</p>
   </div>
 
-  <div id="spread">
+  <div id="spread" style="display:none;">
     <button id="close-btn" type="button">&larr; back to cover</button>
     <div id="pages">
 
@@ -373,15 +375,30 @@
   var spread = document.getElementById('spread');
   var closeBtn = document.getElementById('close-btn');
 
+  var coverHideTimer = null;
+  var spreadHideTimer = null;
+
   function openCard(){
+    if(spreadHideTimer){ clearTimeout(spreadHideTimer); spreadHideTimer = null; }
+    spread.style.display = '';      // rejoin layout before animating in
+    void spread.offsetHeight;       // force reflow so the display change is committed first
     cover.classList.add('is-open');
     spread.classList.add('visible');
-    setTimeout(function(){ coverWrap.classList.add('hidden'); }, 750);
+    coverHideTimer = setTimeout(function(){
+      coverWrap.classList.add('hidden');
+      coverWrap.style.display = 'none';   // fully drop out of layout once invisible
+    }, 750);
   }
   function closeCard(){
-    spread.classList.remove('visible');
+    if(coverHideTimer){ clearTimeout(coverHideTimer); coverHideTimer = null; }
+    coverWrap.style.display = '';   // rejoin layout (still opacity:0 via .hidden)
+    void coverWrap.offsetHeight;    // force reflow before the class change animates
     coverWrap.classList.remove('hidden');
+    spread.classList.remove('visible');
     setTimeout(function(){ cover.classList.remove('is-open'); }, 20);
+    spreadHideTimer = setTimeout(function(){
+      spread.style.display = 'none';   // fully drop out of layout once invisible
+    }, 700);
   }
   cover.addEventListener('click', openCard);
   cover.addEventListener('keydown', function(e){
