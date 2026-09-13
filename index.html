@@ -446,6 +446,7 @@
     void coverWrap.offsetHeight;    // force reflow before the class change animates
     coverWrap.classList.remove('hidden');
     spread.classList.remove('visible');
+    stopMic();
     setTimeout(function(){ cover.classList.remove('is-open'); }, 20);
     spreadHideTimer = setTimeout(function(){
       spread.style.display = 'none';   // fully drop out of layout once invisible
@@ -461,6 +462,9 @@
   var envelopeWrap = document.getElementById('envelope-wrap');
   function toggleLetter(){
     envelopeWrap.classList.toggle('is-reading');
+    if(!envelopeWrap.classList.contains('is-reading')){
+      startMic();
+    }
   }
   envelopeWrap.addEventListener('click', toggleLetter);
   envelopeWrap.addEventListener('keydown', function(e){
@@ -488,8 +492,9 @@
   var lit = true;
   var lastFrameTime = null;
   var rafId = null;
+  var micPollRafId = null;
 
-  var audioCtx = null, analyser = null, freqData = null, micSource = null;
+  var audioCtx = null, analyser = null, freqData = null, micSource = null, micStream = null;
 
   function setStatus(msg){ micStatus.textContent = msg; }
 
@@ -546,7 +551,8 @@
   rafId = requestAnimationFrame(frame);
 
   // ---------- Real mic input ----------
-  function initMic(){
+  function startMic(){
+    if(micActive) return;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       setStatus('Mic isn\u2019t available in this browser/context. Use the hold-to-blow button below.');
       return;
@@ -555,6 +561,7 @@
     setStatus('Requesting mic access\u2026');
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       .then(function(stream){
+        micStream = stream;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         micSource = audioCtx.createMediaStreamSource(stream);
         analyser = audioCtx.createAnalyser();
@@ -563,6 +570,7 @@
         micSource.connect(analyser);
         freqData = new Uint8Array(analyser.frequencyBinCount);
         micActive = true;
+        enableMicBtn.disabled = true;
         setStatus('Mic is on \u2014 go ahead and blow!');
         pollMic();
       })
@@ -572,8 +580,31 @@
       });
   }
 
+  function stopMic(){
+    if(micPollRafId){
+      cancelAnimationFrame(micPollRafId);
+      micPollRafId = null;
+    }
+    if(micStream){
+      micStream.getTracks().forEach(function(track){ track.stop(); });
+      micStream = null;
+    }
+    if(audioCtx && audioCtx.state !== 'closed'){
+      audioCtx.close();
+    }
+    micSource = null;
+    analyser = null;
+    freqData = null;
+    audioCtx = null;
+    micActive = false;
+    currentLevel = 0;
+    micMeterFill.style.width = '0%';
+    enableMicBtn.disabled = false;
+    setStatus('Mic stopped.');
+  }
+
   function pollMic(){
-    if(!micActive) return;
+    if(!micActive || !analyser || !freqData){ return; }
     analyser.getByteFrequencyData(freqData);
     // Breath/blowing energy shows up strongly in the low-frequency bins.
     var lowBins = Math.max(8, Math.floor(freqData.length * 0.12));
@@ -589,10 +620,10 @@
     if(!holding){
       currentLevel = avg;
     }
-    requestAnimationFrame(pollMic);
+    micPollRafId = requestAnimationFrame(pollMic);
   }
 
-  enableMicBtn.addEventListener('click', initMic);
+  enableMicBtn.addEventListener('click', startMic);
 
   // ---------- Hold-to-blow fallback (button + spacebar) ----------
   function startHold(){
