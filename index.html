@@ -403,10 +403,6 @@
 </div>
 </div>
 <div id="blow-controls">
-<div id="mic-meter"><div id="mic-meter-fill"></div></div>
-<p id="mic-status">Blow into your mic, or use the button below.</p>
-<div>
-<button id="enable-mic-btn" type="button">Enable mic</button>
 <button id="hold-blow-btn" type="button">Hold to blow</button>
 </div>
 </div>
@@ -508,6 +504,7 @@
     });
     wishOverlay.classList.remove('show');
     stopConfetti();
+    startMic();
   }
   relightBtn.addEventListener('click', relight);
 
@@ -516,6 +513,7 @@
     lit = false;
     flames.forEach(function(f){ f.classList.add('is-out'); });
     wishOverlay.classList.add('show');
+    stopMic();
     startConfetti();
   }
 
@@ -554,11 +552,9 @@
   function startMic(){
     if(micActive) return;
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      setStatus('Mic isn\u2019t available in this browser/context. Use the hold-to-blow button below.');
       return;
     }
     enableMicBtn.disabled = true;
-    setStatus('Requesting mic access\u2026');
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       .then(function(stream){
         micStream = stream;
@@ -571,12 +567,10 @@
         freqData = new Uint8Array(analyser.frequencyBinCount);
         micActive = true;
         enableMicBtn.disabled = true;
-        setStatus('Mic is on \u2014 go ahead and blow!');
         pollMic();
       })
       .catch(function(err){
         enableMicBtn.disabled = false;
-        setStatus('Mic access wasn\u2019t available (' + (err && err.name ? err.name : 'error') + '). Use the hold-to-blow button below.');
       });
   }
 
@@ -600,7 +594,6 @@
     currentLevel = 0;
     micMeterFill.style.width = '0%';
     enableMicBtn.disabled = false;
-    setStatus('Mic stopped.');
   }
 
   function pollMic(){
