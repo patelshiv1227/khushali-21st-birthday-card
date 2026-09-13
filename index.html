@@ -301,28 +301,6 @@
     width: min(260px, calc(var(--page-w) * 0.78));
     pointer-events:auto;
   }
-  #mic-meter{
-    width:100%;
-    max-width:180px;
-    height:8px;
-    margin:0 auto 4px;
-    background: rgba(0,0,0,.18);
-    border-radius: 999px;
-    overflow:hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,.3);
-  }
-  #mic-meter-fill{
-    height:100%;
-    width:0%;
-    background: linear-gradient(90deg, #e8b354, var(--maroon));
-    transition: width .06s linear;
-  }
-  #mic-status{
-    font-size:.74rem;
-    margin: 4px 0;
-    color: var(--maroon-deep);
-    min-height:1.2em;
-  }
   .note{
     font-family: Georgia, 'Times New Roman', serif;
     font-size:.72rem;
@@ -468,9 +446,6 @@
   var cakeWrap = document.getElementById('cake-wrap');
   var wishOverlay = document.getElementById('wish-overlay');
   var relightBtn = document.getElementById('relight-btn');
-  var micMeterFill = document.getElementById('mic-meter-fill');
-  var micStatus = document.getElementById('mic-status');
-  var enableMicBtn = document.getElementById('enable-mic-btn');
   var holdBlowBtn = document.getElementById('hold-blow-btn');
 
   var BLOW_THRESHOLD = 0.20;   // 0..1 level considered "blowing"; easier to trigger than the current setting
@@ -487,8 +462,6 @@
   var micPollRafId = null;
 
   var audioCtx = null, analyser = null, freqData = null, micSource = null, micStream = null;
-
-  function setStatus(msg){ micStatus.textContent = msg; }
 
   function relight(){
     lit = true;
@@ -518,10 +491,6 @@
     var dt = t - lastFrameTime;
     lastFrameTime = t;
 
-    // meter always reflects current level
-    var pct = Math.max(0, Math.min(1, currentLevel)) * 100;
-    micMeterFill.style.width = pct + '%';
-
     if(lit){
       if(currentLevel > BLOW_THRESHOLD){
         blowMs += dt;
@@ -550,7 +519,6 @@
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       return;
     }
-    enableMicBtn.disabled = true;
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       .then(function(stream){
         micStream = stream;
@@ -562,11 +530,9 @@
         micSource.connect(analyser);
         freqData = new Uint8Array(analyser.frequencyBinCount);
         micActive = true;
-        enableMicBtn.disabled = true;
         pollMic();
       })
       .catch(function(err){
-        enableMicBtn.disabled = false;
       });
   }
 
@@ -588,8 +554,6 @@
     audioCtx = null;
     micActive = false;
     currentLevel = 0;
-    micMeterFill.style.width = '0%';
-    enableMicBtn.disabled = false;
   }
 
   function pollMic(){
@@ -611,8 +575,6 @@
     }
     micPollRafId = requestAnimationFrame(pollMic);
   }
-
-  enableMicBtn.addEventListener('click', startMic);
 
   // ---------- Hold-to-blow fallback (button + spacebar) ----------
   function startHold(){
