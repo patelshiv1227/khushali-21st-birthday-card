@@ -449,8 +449,12 @@
   var relightBtn = document.getElementById('relight-btn');
 
   var BLOW_THRESHOLD = 0.20;   // 0..1 level considered "blowing"; easier to trigger than the current setting
-  var BLOW_MS_NEEDED = 500;    // sustained ms of blowing to extinguish; easier than the current setting
+  var BLOW_MS_NEEDED = 750;    // sustained ms of blowing to extinguish
   var HOLD_LEVEL = 0.5;        // simulated level while hold-button/spacebar pressed
+  var IDLE_ANGLE = 10;          // visible movement while the candles are lit
+  var IDLE_SPEED = 750;         // idle sway period in milliseconds
+  var BLOW_ANGLE = 36;          // extra movement at full blow strength
+  var BLOW_SPEED = 75;           // faster sway period at full blow strength
 
   var currentLevel = 0;        // 0..1, updated by mic analyser or by hold controls
   var micActive = false;
@@ -492,20 +496,23 @@
     lastFrameTime = t;
 
     if(lit){
+      var blowStrength = Math.min(1, currentLevel);
+      var angle = IDLE_ANGLE + blowStrength * BLOW_ANGLE;
+      var swayPeriod = IDLE_SPEED - blowStrength * (IDLE_SPEED - BLOW_SPEED);
+      flames.forEach(function(f, i){
+        var dir = (i % 2 === 0) ? 1 : -1;
+        var sway = Math.sin(t / swayPeriod + i * 0.8) * angle;
+        var lean = dir * angle * 0.35 + sway;
+        f.style.transform = 'rotate(' + lean + 'deg)';
+      });
+
       if(currentLevel > BLOW_THRESHOLD){
         blowMs += dt;
-        var angle = Math.min(1, currentLevel * 1.6) * 30;
-        var wob = Math.sin(t / 45) * angle * 0.35;
-        flames.forEach(function(f, i){
-          var dir = (i % 2 === 0) ? 1 : -1;
-          f.style.transform = 'rotate(' + (dir * (angle + wob)) + 'deg)';
-        });
         if(blowMs >= BLOW_MS_NEEDED){
           extinguish();
         }
       } else {
         blowMs = Math.max(0, blowMs - dt * 0.6);
-        flames.forEach(function(f){ f.style.transform = 'rotate(0deg)'; });
       }
     }
 
